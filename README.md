@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AEO Diagnostic
 
-## Getting Started
+> See how your brand ranks across GPT-5.5, Gemini 2.5 Flash, and Gemma 4 when shoppers ask AI for product recommendations. Built for the Pixii take-home.
 
-First, run the development server:
+Paste a brand + product category → app generates the queries a real shopper would type → fans them out across three different LLMs in parallel → extracts brand mentions and rank positions → renders a scorecard, heatmap, and competitor leaderboard. Optional Tavily integration shows how the LLM rankings compare to real Google results.
+
+## Quick start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd web
+cp .env.example .env.local        # then fill in keys
+bun install
+bun run dev                       # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Required keys: `OPENAI_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`. Optional: `TAVILY_API_KEY` (Google comparison stretch), `BLOB_READ_WRITE_TOKEN` (share links — auto-set on Vercel).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## What's where
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Path | What |
+|---|---|
+| `web/` | Active Next.js 16 app — work here |
+| `legacy/` | Original FastAPI + Vite MVP — archived, do not edit |
+| `CLAUDE.md` | Project conventions for AI agents |
+| `progresstillnow.md` | Live status: done / left / blocked |
 
-## Learn More
+## Stack
 
-To learn more about Next.js, take a look at the following resources:
+Next.js 16 (App Router, Turbopack) · TypeScript · Tailwind 4 · AI SDK v6 (`@ai-sdk/openai`, `@ai-sdk/google`) · Vercel Blob · Tavily · bun · zod.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+No Python. Direct provider clients (not AI Gateway). Vercel Fluid Compute (300s timeout) for the analyze pipeline.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## APIs / tools used (≥2)
 
-## Deploy on Vercel
+1. **OpenAI** — GPT-5.5
+2. **Google AI Studio** — Gemini 2.5 Flash + Gemma 4 31B (one key, two models)
+3. **Vercel Blob** — share-link persistence
+4. **Tavily** — Google reality-check (optional)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deploy
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+cd web
+vercel link
+# set OPENAI_API_KEY, GOOGLE_GENERATIVE_AI_API_KEY, TAVILY_API_KEY in dashboard
+# provision Vercel Blob store (Storage tab) — BLOB_READ_WRITE_TOKEN auto-injected
+vercel deploy --prod
+```
