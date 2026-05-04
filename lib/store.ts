@@ -1,4 +1,4 @@
-import { put, list, head } from "@vercel/blob";
+import { put, list, get } from "@vercel/blob";
 import type { AnalyzeResult } from "./types";
 
 const PREFIX = "aeo/";
@@ -40,13 +40,10 @@ export async function loadResult(id: string): Promise<AnalyzeResult | null> {
 
   const path = `${PREFIX}${id}.json`;
   try {
-    const meta = await head(path);
-    const res = await fetch(meta.url, { cache: "no-store" });
-    if (!res.ok) {
-      console.error(`[store] fetch ${meta.url} returned ${res.status}`);
-      return null;
-    }
-    const parsed = (await res.json()) as AnalyzeResult;
+    const blob = await get(path, { access: "private" });
+    if (!blob) return null;
+    const text = await new Response(blob.stream).text();
+    const parsed = JSON.parse(text) as AnalyzeResult;
     memoryStore.set(id, parsed);
     return parsed;
   } catch (err) {
