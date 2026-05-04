@@ -16,8 +16,9 @@ function blobConfigured() {
 }
 
 export async function saveResult(result: AnalyzeResult): Promise<string> {
+  memoryStore.set(result.id, result);
+
   if (!blobConfigured()) {
-    memoryStore.set(result.id, result);
     return `mem://${result.id}`;
   }
 
@@ -32,16 +33,24 @@ export async function saveResult(result: AnalyzeResult): Promise<string> {
 }
 
 export async function loadResult(id: string): Promise<AnalyzeResult | null> {
-  if (!blobConfigured()) {
-    return memoryStore.get(id) ?? null;
-  }
+  const fromMem = memoryStore.get(id);
+  if (fromMem) return fromMem;
+
+  if (!blobConfigured()) return null;
+
   const path = `${PREFIX}${id}.json`;
   try {
     const meta = await head(path);
     const res = await fetch(meta.url, { cache: "no-store" });
-    if (!res.ok) return null;
-    return (await res.json()) as AnalyzeResult;
-  } catch {
+    if (!res.ok) {
+      console.error(`[store] fetch ${meta.url} returned ${res.status}`);
+      return null;
+    }
+    const parsed = (await res.json()) as AnalyzeResult;
+    memoryStore.set(id, parsed);
+    return parsed;
+  } catch (err) {
+    console.error(`[store] loadResult(${id}) failed:`, (err as Error).message);
     return null;
   }
 }
