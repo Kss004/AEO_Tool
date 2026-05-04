@@ -23,7 +23,7 @@ export async function saveResult(result: AnalyzeResult): Promise<string> {
 
   const path = `${PREFIX}${result.id}.json`;
   const { url } = await put(path, JSON.stringify(result), {
-    access: "public",
+    access: "private",
     addRandomSuffix: false,
     allowOverwrite: true,
     contentType: "application/json",
