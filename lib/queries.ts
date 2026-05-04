@@ -2,7 +2,7 @@ import { generateText, Output } from "ai";
 import { z } from "zod";
 import { utilityModel } from "./models";
 
-const QuerySchema = z.object({
+export const QuerySchema = z.object({
   queries: z
     .array(z.string().min(8).max(140))
     .min(5)

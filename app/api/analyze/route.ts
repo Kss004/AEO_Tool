@@ -5,6 +5,7 @@ import { fanout } from "@/lib/fanout";
 import { score } from "@/lib/score";
 import { saveResult } from "@/lib/store";
 import { compareToGoogle } from "@/lib/tavily";
+import { rateLimit, clientIp } from "@/lib/ratelimit";
 import type { AnalyzeResult } from "@/lib/types";
 
 export const maxDuration = 300;
@@ -24,6 +25,26 @@ function newId() {
 }
 
 export async function POST(req: Request) {
+  const ip = clientIp(req);
+  const limit = await rateLimit(ip);
+  if (!limit.ok) {
+    return NextResponse.json(
+      {
+        error: "Rate limit exceeded",
+        retryAfterSeconds: limit.retryAfterSeconds,
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(limit.retryAfterSeconds),
+          "X-RateLimit-Limit": String(limit.limit),
+          "X-RateLimit-Remaining": String(limit.remaining),
+          "X-RateLimit-Reset": String(limit.reset),
+        },
+      },
+    );
+  }
+
   let parsed;
   try {
     const body = await req.json();
@@ -43,7 +64,7 @@ export async function POST(req: Request) {
     const knownBrands = [brand, ...competitors];
 
     const [cells, tavily] = await Promise.all([
-      fanout(queries, brand, competitors),
+      fanout(queries, brand, competitors, req.signal),
       compareToGoogle(queries, brand, knownBrands),
     ]);
 
