@@ -19,8 +19,17 @@ const MentionsSchema = z.object({
     .describe("All distinct brand/product names mentioned, in the order they appear"),
 });
 
+export function stripThinking(text: string): string {
+  return text
+    .replace(/<think>[\s\S]*?<\/think>/g, "")
+    .replace(/<thinking>[\s\S]*?<\/thinking>/g, "")
+    .replace(/<reasoning>[\s\S]*?<\/reasoning>/g, "")
+    .trim();
+}
+
 export async function extractMentions(responseText: string): Promise<Mention[]> {
-  if (!responseText || responseText.trim().length < 20) return [];
+  const cleaned = stripThinking(responseText);
+  if (!cleaned || cleaned.trim().length < 20) return [];
 
   try {
     const { output } = await generateText({
@@ -41,7 +50,7 @@ Capture each distinct brand only once (use the first/most-recommended occurrence
 
 Text:
 """
-${responseText.slice(0, 6000)}
+${cleaned.slice(0, 6000)}
 """`,
     });
 
@@ -68,12 +77,13 @@ export function fallbackTargetRank(
   responseText: string,
   target: string,
 ): number | null {
-  if (!responseText || !target) return null;
+  const text = stripThinking(responseText);
+  if (!text || !target) return null;
   const t = target.toLowerCase().trim();
   if (t.length < 3) return null;
 
   const numbered = [
-    ...responseText.matchAll(/(?:^|\n)\s*(?:###\s*)?(\d{1,2})[.)]\s*\**\s*([^\n*]+)/g),
+    ...text.matchAll(/(?:^|\n)\s*(?:###\s*)?(\d{1,2})[.)]\s*\**\s*([^\n*]+)/g),
   ];
   for (const m of numbered) {
     const rank = parseInt(m[1], 10);
@@ -82,7 +92,7 @@ export function fallbackTargetRank(
   }
 
   const headerNumbered = [
-    ...responseText.matchAll(
+    ...text.matchAll(
       /(?:^|\n)#{1,4}\s*(\d{1,2})[.)]?\s*\**\s*([^\n#*]+)/g,
     ),
   ];
@@ -92,9 +102,9 @@ export function fallbackTargetRank(
     if (rank >= 1 && rank <= 30 && line.includes(t)) return rank;
   }
 
-  if (responseText.toLowerCase().includes(t)) {
-    const idx = responseText.toLowerCase().indexOf(t);
-    const before = responseText.slice(0, idx);
+  if (text.toLowerCase().includes(t)) {
+    const idx = text.toLowerCase().indexOf(t);
+    const before = text.slice(0, idx);
     const bullets = (before.match(/(?:^|\n)\s*\d{1,2}[.)]/g) ?? []).length;
     if (bullets >= 1) return Math.min(bullets + 1, 20);
     return 99;
@@ -108,7 +118,7 @@ export function fallbackBrandList(
   knownBrands: string[],
 ): Mention[] {
   const out: Mention[] = [];
-  const text = responseText;
+  const text = stripThinking(responseText);
   const seen = new Set<string>();
   let counter = 1;
   for (const name of knownBrands) {

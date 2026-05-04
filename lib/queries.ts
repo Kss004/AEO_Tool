@@ -5,8 +5,8 @@ import { utilityModel } from "./models";
 const QuerySchema = z.object({
   queries: z
     .array(z.string().min(8).max(140))
-    .min(6)
-    .max(10)
+    .min(5)
+    .max(6)
     .describe("Realistic shopper queries a buyer would type into ChatGPT/Gemini before buying"),
 });
 
@@ -24,7 +24,7 @@ export async function generateBuyerQueries(
     output: Output.object({ schema: QuerySchema }),
     prompt: `You are designing an AEO (AI Engine Optimization) audit for the brand "${brand}" in the "${category}" category. ${competitorHint}
 
-Generate 8-10 buyer-style queries a real shopper would type into ChatGPT, Gemini, or Claude when researching this category. Mix:
+Generate exactly 5-6 buyer-style queries a real shopper would type into ChatGPT, Gemini, or Claude when researching this category. Mix:
 - top-N requests ("best X for Y", "top 5 X under $50")
 - comparison queries ("X vs Y for Z need")
 - need-based queries ("what should I buy if I have <constraint>")

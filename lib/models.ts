@@ -1,52 +1,47 @@
 import { createOpenAI } from "@ai-sdk/openai";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { createGroq } from "@ai-sdk/groq";
 import type { ModelKey } from "./types";
 
 const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const google = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-});
-
-const openrouter = createOpenRouter({
-  apiKey: process.env.OPENROUTER_API_KEY,
+const groq = createGroq({
+  apiKey: process.env.GROQ_API_KEY,
 });
 
 const OPENAI_PRIMARY = "gpt-5.5";
 const OPENAI_FALLBACK = "gpt-5.4-nano";
 
-const GEMINI_PRIMARY = "gemini-2.5-flash";
-const GEMINI_FALLBACK = "gemini-2.0-flash";
+const LLAMA_PRIMARY = "meta-llama/llama-4-scout-17b-16e-instruct";
+const LLAMA_FALLBACK = "llama-3.3-70b-versatile";
 
-const GEMMA_PRIMARY = "gemma-4-31b-it";
-const GEMMA_FALLBACK = "gemma-4-26b-a4b-it";
+const QWEN_PRIMARY = "qwen/qwen3-32b";
+const QWEN_FALLBACK = "llama-3.3-70b-versatile";
 
-const LLAMA_PRIMARY = "meta-llama/llama-3.3-70b-instruct:free";
-const LLAMA_FALLBACK = "meta-llama/llama-3.2-3b-instruct:free";
+const GEMMA_PRIMARY = "openai/gpt-oss-120b";
+const GEMMA_FALLBACK = "openai/gpt-oss-20b";
 
-const QWEN_PRIMARY = "qwen/qwen3-next-80b-a3b-instruct:free";
-const QWEN_FALLBACK = "qwen/qwen3-coder:free";
+const KIMI_PRIMARY = "openai/gpt-oss-20b";
+const KIMI_FALLBACK = "llama-3.1-8b-instant";
 
 export function modelFor(key: ModelKey, useFallback = false) {
   switch (key) {
     case "openai":
       return openai(useFallback ? OPENAI_FALLBACK : OPENAI_PRIMARY);
-    case "gemini":
-      return google(useFallback ? GEMINI_FALLBACK : GEMINI_PRIMARY);
-    case "gemma":
-      return google(useFallback ? GEMMA_FALLBACK : GEMMA_PRIMARY);
     case "llama":
-      return openrouter(useFallback ? LLAMA_FALLBACK : LLAMA_PRIMARY);
+      return groq(useFallback ? LLAMA_FALLBACK : LLAMA_PRIMARY);
     case "qwen":
-      return openrouter(useFallback ? QWEN_FALLBACK : QWEN_PRIMARY);
+      return groq(useFallback ? QWEN_FALLBACK : QWEN_PRIMARY);
+    case "gemma":
+      return groq(useFallback ? GEMMA_FALLBACK : GEMMA_PRIMARY);
+    case "kimi":
+      return groq(useFallback ? KIMI_FALLBACK : KIMI_PRIMARY);
   }
 }
 
 export function utilityModel() {
-  return google(GEMINI_PRIMARY);
+  return openai("gpt-5.4-nano");
 }
 
 export function extractorModel() {
@@ -55,8 +50,8 @@ export function extractorModel() {
 
 export const ALL_MODELS: ModelKey[] = [
   "openai",
-  "gemini",
-  "gemma",
   "llama",
   "qwen",
+  "gemma",
+  "kimi",
 ];

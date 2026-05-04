@@ -11,11 +11,11 @@ import type { ModelCell, ModelKey } from "./types";
 const SYSTEM = `You are a helpful AI shopping assistant. Answer the user's product research question with concrete brand/product recommendations. Provide a clear ranked list of 5-10 specific products by name. Avoid disclaimers; act like ChatGPT/Gemini answering a real shopper.`;
 
 const CONCURRENCY: Record<ModelKey, number> = {
-  openai: 8,
-  gemini: 2,
-  gemma: 2,
-  llama: 2,
-  qwen: 2,
+  openai: 6,
+  llama: 6,
+  qwen: 6,
+  gemma: 6,
+  kimi: 6,
 };
 
 function isRateLimit(msg: string): boolean {
@@ -56,10 +56,10 @@ async function callWithFallback(model: ModelKey, query: string) {
   try {
     return { ...(await callWithRetry(model, query, false)), errorMessage: null as string | null };
   } catch (err) {
-    console.error(`[fanout] ${model} primary failed:`, (err as Error).message);
+    console.warn(`[fanout] ${model} primary failed, trying fallback:`, (err as Error).message);
     try {
       const r = await callWithRetry(model, query, true);
-      return { ...r, errorMessage: `primary failed, used fallback: ${(err as Error).message}` };
+      return { ...r, errorMessage: null as string | null };
     } catch (err2) {
       console.error(`[fanout] ${model} fallback also failed:`, (err2 as Error).message);
       return {

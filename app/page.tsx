@@ -22,9 +22,23 @@ export default function Home() {
 
       <InputForm />
 
+      <div className="flex items-center justify-between rounded-2xl border border-zinc-900 bg-zinc-950/40 px-5 py-4 text-sm text-zinc-400">
+        <span>
+          Don&apos;t want to wait for a live run?{" "}
+          <span className="text-zinc-500">
+            See a pre-recorded sample diagnostic.
+          </span>
+        </span>
+        <a
+          href="/demo"
+          className="rounded-lg border border-emerald-700/40 bg-emerald-900/20 px-3 py-1.5 text-emerald-300 transition hover:bg-emerald-900/40"
+        >
+          Try sample →
+        </a>
+      </div>
+
       <footer className="border-t border-zinc-900 pt-6 text-xs text-zinc-500">
-        Built for the Pixii take-home. APIs: OpenAI, Google AI Studio, Vercel
-        Blob, Tavily.
+        Built for the Pixii take-home. APIs: OpenAI, Groq, Vercel Blob, Tavily.
       </footer>
     </main>
   );

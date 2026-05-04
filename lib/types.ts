@@ -1,11 +1,11 @@
-export type ModelKey = "openai" | "gemini" | "gemma" | "llama" | "qwen";
+export type ModelKey = "openai" | "llama" | "qwen" | "gemma" | "kimi";
 
 export const MODEL_LABELS: Record<ModelKey, string> = {
   openai: "GPT-5.5",
-  gemini: "Gemini 2.5 Flash",
-  gemma: "Gemma 4 31B",
-  llama: "Llama 3.3 70B",
-  qwen: "Qwen3 Next 80B",
+  llama: "Llama 4 Scout",
+  qwen: "Qwen 3 32B",
+  gemma: "GPT-OSS 120B",
+  kimi: "GPT-OSS 20B",
 };
 
 export type Mention = {
