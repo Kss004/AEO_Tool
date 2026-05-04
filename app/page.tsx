@@ -38,7 +38,7 @@ export default function Home() {
       </div>
 
       <footer className="border-t border-zinc-900 pt-6 text-xs text-zinc-500">
-        Pixii take-home.
+        Pixii take-home assignment.
       </footer>
     </main>
   );
