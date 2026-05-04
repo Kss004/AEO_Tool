@@ -38,7 +38,7 @@ export default function Home() {
       </div>
 
       <footer className="border-t border-zinc-900 pt-6 text-xs text-zinc-500">
-        Built for the Pixii take-home. APIs: OpenAI, Groq, Vercel Blob, Tavily.
+        Pixii take-home.
       </footer>
     </main>
   );

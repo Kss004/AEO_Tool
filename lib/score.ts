@@ -65,45 +65,97 @@ function isGenericTerm(name: string): boolean {
   return false;
 }
 
+const CONNECTORS = new Set([
+  "of",
+  "and",
+  "the",
+  "for",
+  "a",
+  "an",
+  "to",
+  "in",
+  "on",
+  "with",
+  "by",
+  "from",
+]);
+
 function titleCase(s: string): string {
   return s
     .split(" ")
-    .map((w) => {
+    .map((w, i) => {
       if (!w) return w;
       if (/^[A-Z]{2,}$/.test(w)) return w;
+      const lower = w.toLowerCase();
+      if (i > 0 && CONNECTORS.has(lower)) return lower;
       if (w.length <= 2 && /^[a-z]+$/.test(w)) return w.toUpperCase();
       return w[0].toUpperCase() + w.slice(1);
     })
     .join(" ");
 }
 
+function clusterKey(canon: string): string {
+  const tokens = canon.split(" ").filter((t) => t.length > 0);
+  if (tokens.length === 0) return canon;
+  if (tokens.length === 1) return tokens[0];
+  return tokens.slice(0, 2).join(" ");
+}
+
 function mergeFuzzyKeys<
   V extends { mentions: number; ranks: number[]; displayName: string },
 >(map: Map<string, V>): Map<string, V> {
-  const entries = [...map.entries()].sort((a, b) => a[0].length - b[0].length);
-  const out = new Map<string, V>();
-  for (const [key, val] of entries) {
-    let mergedInto: string | null = null;
-    for (const existingKey of out.keys()) {
-      if (
-        existingKey.startsWith(key + " ") ||
-        key.startsWith(existingKey + " ") ||
-        existingKey === key
-      ) {
-        mergedInto = existingKey;
+  const clusters = new Map<string, { keys: string[]; vals: V[] }>();
+  for (const [key, val] of map.entries()) {
+    const ck = clusterKey(key);
+    const slot = clusters.get(ck) ?? { keys: [], vals: [] };
+    slot.keys.push(key);
+    slot.vals.push(val);
+    clusters.set(ck, slot);
+  }
+
+  const sortedKeys = [...clusters.keys()].sort((a, b) => a.length - b.length);
+  for (const shortKey of sortedKeys) {
+    if (!clusters.has(shortKey)) continue;
+    if (shortKey.includes(" ")) continue;
+    for (const longKey of sortedKeys) {
+      if (longKey === shortKey) continue;
+      if (!clusters.has(longKey)) continue;
+      if (longKey.startsWith(shortKey + " ")) {
+        const shortSlot = clusters.get(shortKey)!;
+        const longSlot = clusters.get(longKey)!;
+        longSlot.keys.push(...shortSlot.keys);
+        longSlot.vals.push(...shortSlot.vals);
+        clusters.delete(shortKey);
         break;
       }
     }
-    if (mergedInto) {
-      const existing = out.get(mergedInto)!;
-      existing.mentions += val.mentions;
-      existing.ranks.push(...val.ranks);
-      if (val.displayName.length < existing.displayName.length) {
-        existing.displayName = val.displayName;
-      }
-    } else {
-      out.set(key, { ...val, ranks: [...val.ranks] });
+  }
+
+  const out = new Map<string, V>();
+  for (const [ck, slot] of clusters.entries()) {
+    if (slot.vals.length === 1) {
+      out.set(slot.keys[0], { ...slot.vals[0], ranks: [...slot.vals[0].ranks] });
+      continue;
     }
+    let totalMentions = 0;
+    const allRanks: number[] = [];
+    let displayName = slot.vals[0].displayName;
+    let displayLen = displayName.length;
+    for (const v of slot.vals) {
+      totalMentions += v.mentions;
+      allRanks.push(...v.ranks);
+      if (v.displayName.length < displayLen) {
+        displayName = v.displayName;
+        displayLen = v.displayName.length;
+      }
+    }
+    const merged: V = {
+      ...slot.vals[0],
+      mentions: totalMentions,
+      ranks: allRanks,
+      displayName,
+    };
+    out.set(ck, merged);
   }
   return out;
 }

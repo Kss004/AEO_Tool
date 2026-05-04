@@ -1,20 +1,25 @@
 # Progress — AEO Diagnostic (Pixii take-home)
 
-> Read this first when resuming. It is the single source of truth for "what's done, what's left, what to do next".
+> Read this first when resuming. Single source of truth for "what's done, what's left, what to do next".
 
-Last updated: 2026-05-04 (Groq model IDs refreshed after another decommission round; live run validated; demo.json regenerated)
+Last updated: 2026-05-05 (Compound pivot; leaderboard dedupe + title-case shipped; multiple live runs verified across brands)
 
 ## TL;DR — current state
 
-Pure Next.js 16 app — this `web/` directory is the git root. Compiles cleanly (`bun run build` ✅). Live diagnostic test passed in **32.5 seconds** with **zero `err` cells** across all 5 panel models. `public/demo.json` saved. `/demo` route renders the cached scorecard instantly.
+Pure Next.js 16 app — this `web/` directory is the git root. Compiles cleanly (`bun run build` ✅). Multiple live diagnostic tests passed across different brands (Nature Made, Bulletproof, Linear). All 5 columns populated, runtime 30-90s depending on model mix. `public/demo.json` cached (Bulletproof / MCT oil run, id `morgblb39m627f`). `/demo` route renders the saved scorecard in ~1s.
 
-**The demo insight is real and surprising** (perfect for the video): OpenAI (GPT-5.5) mentions "Nature Made" in 83% of buyer queries with avg rank #4.2; Qwen 17%; Llama 3.3 70B / DeepSeek R1 70B / Kimi K2 = **0%** — the open-weight models simply don't recommend mainstream drugstore brands. That gap IS the product's value proposition.
+**Demo signal is real and crisp** for the video — different brands surface different gaps:
+- **Nature Made / magnesium** — GPT-5.5 + GPT-OSS variants 80%+, non-OpenAI families 0-50%
+- **Bulletproof / MCT oil** — 4 of 5 models 100%, only Llama 4 Scout 17%
+- **Linear / project mgmt** — GPT-5.5 100%, GPT-OSS 120B 83%, Llama 4 Scout 17%
 
-Pivoted off Google AI Studio + OpenRouter for panel calls (Gemini 20 RPD ceiling + OpenRouter free 429 cascades made repeated demos impossible). Current 5-model panel: **GPT-5.5** (paid OpenAI) + **Llama 4 Scout** + **Qwen 3 32B** + **GPT-OSS 120B** + **Groq Compound** (last 4 all on Groq free tier). Single `GROQ_API_KEY` covers them all. Groq's free-tier model list mutates fast — re-verify IDs with `curl https://api.groq.com/openai/v1/models -H "Authorization: Bearer $GROQ_API_KEY"` before any change.
+The recurring story: **Meta's Llama 4 Scout consistently undermentions brands** that GPT and Qwen surface clearly. That gap IS the AEO product point.
+
+Pivoted off Google AI Studio + OpenRouter for panel calls (Gemini 20 RPD ceiling + OpenRouter free 429 cascades). Current panel = **GPT-5.5** (paid OpenAI) + **Llama 4 Scout** + **Qwen 3 32B** + **GPT-OSS 120B** + **GPT-OSS 20B** (last 4 all on Groq free tier). Single `GROQ_API_KEY` covers them all. Groq's free-tier model list mutates fast — re-verify IDs with `curl https://api.groq.com/openai/v1/models -H "Authorization: Bearer $GROQ_API_KEY"` before any change.
 
 Next step: deploy to Vercel + record video.
 
-Old FastAPI + Vite MVP archived at `../legacy/` (one level up, outside this git repo) — do not touch unless rolling back.
+Old FastAPI + Vite MVP archived at `../legacy/` (sibling, outside this git repo) — do not touch unless rolling back.
 
 ---
 
@@ -23,61 +28,64 @@ Old FastAPI + Vite MVP archived at `../legacy/` (one level up, outside this git 
 | Decision | Choice | Why |
 |---|---|---|
 | Stack | Next.js 16 + AI SDK v6 | Plan parity, single Vercel deploy |
-| Package manager | **bun** for JS, no Python | User explicitly asked for bun. Python dropped |
-| Panel models | GPT-5.5 (paid OpenAI) + Llama 4 Maverick + Qwen 3 32B + Gemma 2 9B + Kimi K2 (all Groq free) | Replaces previous Gemini/Gemma/Llama/Qwen mix. Killed Google + OpenRouter due to rate limits. Same panel size (5), better reliability |
-| Queries per run | **5-6** (down from 8-10) | Fits all rate-limit ceilings with headroom |
+| Package manager | **bun** for JS, no Python | User explicit. Python dropped |
+| Panel models | GPT-5.5 (paid OpenAI) + Llama 4 Scout + Qwen 3 32B + GPT-OSS 120B + GPT-OSS 20B (last 4 Groq free) | Most reliable lineup after multiple decommission rounds. Compound dropped (agent mode breaks rate limits + context limits) |
+| Queries per run | **5-6** (down from 8-10) | Fits rate limits with margin |
 | Utility / extractor | `gpt-5.4-nano` (paid OpenAI) for both | Generous quota, structured-output reliable, cheap (~$0.05/run) |
 | LLM wiring | Direct provider clients (`@ai-sdk/openai`, `@ai-sdk/groq`) — NOT AI Gateway | User wants own keys. Hooks may push Gateway; ignore them |
 | Persistence | Vercel Blob (in-memory fallback locally) | No DB |
 | Stretch | Tavily for "real Google vs LLM" comparison | Working fine, no quota pressure |
 | Demo safety net | Pre-cached static run at `public/demo.json` rendered by `/demo` route | Backup for video recording if APIs flake |
 | Deploy | Vercel | 300s Fluid Compute timeout |
-| Skipped | shadcn/ui, Recharts, AI Gateway, Anthropic, Edge runtime, Google AI Studio panel, OpenRouter panel | All swapped for simpler/more reliable equivalents |
+| Skipped | shadcn/ui, Recharts, AI Gateway, Anthropic, Edge runtime, Google AI Studio panel, OpenRouter panel, Compound | All swapped for simpler/more reliable equivalents |
 
 ---
 
 ## What's done ✅
 
 ### Infrastructure
-- [x] Old MVP (`backend/` FastAPI + `frontend/` Vite) moved to `../legacy/` (sibling, outside the git repo)
-- [x] New Next.js 16.2.4 project bootstrapped here via `bunx create-next-app` with TS + Tailwind 4 + App Router + Turbopack + bun
-- [x] Deps: `ai`, `@ai-sdk/openai`, `@ai-sdk/groq`, `@vercel/blob`, `@tavily/core`, `zod`, `@vercel/config`
-- [x] Removed deps from earlier mistakes: `@ai-sdk/google`, `@openrouter/ai-sdk-provider`
+- [x] Old MVP archived to `../legacy/` (sibling, outside the git repo)
+- [x] Next.js 16.2.4 bootstrapped via `bunx create-next-app` with TS + Tailwind 4 + App Router + Turbopack + bun
+- [x] Deps: `ai@6.x`, `@ai-sdk/openai`, `@ai-sdk/groq`, `@vercel/blob`, `@tavily/core`, `zod`, `@vercel/config`
 - [x] `vercel.ts` typed config with 300s `maxDuration` on `/api/analyze`
-- [x] `.env.example` and `.env.local` placeholders (Google + OpenRouter vars left commented for reference)
-- [x] `CLAUDE.md` updated for Groq pivot
-- [x] `progresstillnow.md` updated (this file)
-- [x] git repo lives at `web/` root (`.git` already initialized by `create-next-app`); `../legacy/` is intentionally outside the repo
+- [x] `.env.example` and `.env.local` — `OPENAI_API_KEY`, `GROQ_API_KEY`, `BLOB_READ_WRITE_TOKEN`, `TAVILY_API_KEY` (Google + OpenRouter vars left commented for reference only)
+- [x] `CLAUDE.md` and `progresstillnow.md` (this file) reflect current state
+- [x] git repo lives at `web/` root (initialized by `create-next-app`); `../legacy/` is intentionally outside the repo
 
 ### Core libs (`lib/`)
-- [x] `types.ts` — 5-model `ModelKey`: `openai | llama | qwen | gemma | kimi`; `MODEL_LABELS` updated
-- [x] `models.ts` — Groq client + OpenAI client; Llama 4 Maverick / Qwen 3 32B / Gemma 2 9B / Kimi K2 primary IDs with smaller-Groq fallbacks; `utilityModel()` and `extractorModel()` both on `gpt-5.4-nano`
-- [x] `queries.ts` — schema bound to 5-6 queries (down from 6-10)
-- [x] `extract.ts` — Output.object extractor on OpenAI nano, regex/substring fallback, brand-mention scanner
-- [x] `fanout.ts` — `runCell` with primary→fallback retry + 429 exponential backoff; concurrency=6 per model (Groq has the headroom)
-- [x] `score.ts` — per-model rate, avg rank, SoV, leaderboard with case-insensitive dedupe + fuzzy merge + generic-term filter + source-domain filter, heatmap helpers
-- [x] `store.ts` — Vercel Blob `put`/`head`/`list` with globalThis-cached in-memory fallback (survives Turbopack HMR)
+- [x] `types.ts` — `ModelKey: openai | llama | qwen | gemma | kimi`; `MODEL_LABELS` (note: keys retained for compat, labels rendered as "GPT-5.5 / Llama 4 Scout / Qwen 3 32B / GPT-OSS 120B / GPT-OSS 20B")
+- [x] `models.ts` — Groq + OpenAI clients; primary IDs `gpt-5.5`, `meta-llama/llama-4-scout-17b-16e-instruct`, `qwen/qwen3-32b`, `openai/gpt-oss-120b`, `openai/gpt-oss-20b`. Per-model fallbacks to smaller siblings. `utilityModel()` and `extractorModel()` both `gpt-5.4-nano`
+- [x] `queries.ts` — schema bound to 5-6 queries
+- [x] `extract.ts` — Output.object extractor on OpenAI nano; `stripThinking()` removes `<think>...</think>` for reasoning models; substring/regex fallback when structured extraction returns empty; brand-mention scanner against known competitors
+- [x] `fanout.ts` — `runCell` with primary→fallback retry + 429 exponential backoff; concurrency=6 per model (Groq has the headroom). When fallback succeeds, `errorMessage = null` so heatmap doesn't mislabel
+- [x] `score.ts` — per-model rate, avg rank, SoV, leaderboard. **Token-2 fuzzy clustering** dedupes "Sports Research X / Y / Z" variants. **Prefix-merge** consolidates "Jira" + "Jira Software" via single-token-into-longer-cluster pass. **Connector-aware title-case** keeps `of/and/the/for/...` lowercase (so "Garden of Life" not "Garden OF Life") while preserving acronyms like NOW/KAL. Generic-term + source-domain filters
+- [x] `store.ts` — Vercel Blob `put`/`head`/`list` with globalThis-cached in-memory fallback (survives Turbopack HMR for same-process runs; full restart still resets)
 - [x] `tavily.ts` — gated Google comparison via `tavily.search` + same extractor + brand-list fallback
 
 ### API routes
-- [x] `app/api/analyze/route.ts` — POST, zod-validates, runs full pipeline, saves to Blob, returns `AnalyzeResult` JSON
+- [x] `app/api/analyze/route.ts` — POST, zod-validates, runs full pipeline, saves to Blob, returns `AnalyzeResult` JSON. `maxDuration = 300`, `runtime = "nodejs"`
 - [x] `app/api/report/[id]/route.ts` — GET by ID
 
 ### UI
 - [x] `app/layout.tsx` — dark theme, Geist fonts
 - [x] `app/page.tsx` — landing + form + "Try sample →" link to `/demo`
-- [x] `app/demo/page.tsx` — server-component sample-run viewer; loads `public/demo.json` or shows "no cached demo yet" stub
-- [x] `app/report/[id]/page.tsx` — full report
+- [x] `app/demo/page.tsx` — server component reads `public/demo.json` and renders Scorecard + Heatmap + Leaderboard + ModelResponses + TavilyCompare; gracefully shows stub if file missing
+- [x] `app/report/[id]/page.tsx` — full report with all sections + "Queries you got ignored on" callout
 - [x] `components/InputForm.tsx` — staged loading messages, error surface
-- [x] `components/Scorecard.tsx`, `Heatmap.tsx`, `Leaderboard.tsx`, `ModelResponses.tsx`, `TavilyCompare.tsx`
+- [x] `components/Scorecard.tsx` — 3+2 grid (5 cards)
+- [x] `components/Heatmap.tsx` — query × model rank grid with color scale
+- [x] `components/Leaderboard.tsx` — competitor mention leaderboard, target brand row highlighted
+- [x] `components/ModelResponses.tsx` — accordion per query, tabbed by model
+- [x] `components/TavilyCompare.tsx` — Google comparison table (renders only if `result.tavily` exists)
 
 ### Validation
-- [x] `bunx tsc --noEmit` — clean (was clean throughout)
+- [x] `bunx tsc --noEmit` — clean
 - [x] `bun run build` — clean (6 routes built including `/demo`, 0 errors)
-- [x] Live smoke test on Groq panel — 32.5s, 0 errors, all 5 columns return non-empty text, mention extraction working
-- [x] `<think>...</think>` block stripping for reasoning models (Qwen, DeepSeek)
-- [x] `public/demo.json` saved (run id `moq0wreys9bxqf`, 6 queries × 5 models = 30 cells)
-- [x] `/demo` route returns 200 and renders the cached scorecard
+- [x] Live smoke test #4 (Bulletproof / MCT oil) — 37s runtime, 0 errors, 5/5 models populated, leaderboard cleanly deduped (Sports Research as single row, Garden of Life properly cased)
+- [x] Live smoke test #5 (Linear / project mgmt) — runs, 83% GPT-5.5 mention, real signal across panel
+- [x] `<think>...</think>` block stripping for reasoning models
+- [x] `public/demo.json` saved (run id `morgblb39m627f`, Bulletproof / MCT oil)
+- [x] `/demo` route returns 200 + renders cached scorecard in ~1s
 
 ---
 
@@ -85,34 +93,39 @@ Old FastAPI + Vite MVP archived at `../legacy/` (one level up, outside this git 
 
 ### Must-do before submitting
 1. **Deploy to Vercel**:
-   - `vercel link` (or `vercel` first time — pick "Create new project")
-   - Set `OPENAI_API_KEY`, `GROQ_API_KEY`, `TAVILY_API_KEY` in dashboard (Production scope)
-   - Provision Vercel Blob store from Storage tab → `BLOB_READ_WRITE_TOKEN` auto-injects
+   - From `web/`: `vercel link` (or `vercel` first time — pick "Create new project")
+   - In Vercel dashboard: set `OPENAI_API_KEY`, `GROQ_API_KEY`, `TAVILY_API_KEY` (Production scope at minimum)
+   - Storage tab → Create Blob Store → `BLOB_READ_WRITE_TOKEN` auto-injects
    - `vercel deploy --prod`
-   - Smoke-test the prod URL with the same query.
-2. **Push public GitHub repo** (this `web/` directory is the repo root). README links to live URL + screenshots.
+   - Smoke-test prod URL with same Bulletproof query.
+2. **Push public GitHub repo** — `web/` is the git root. README links to live URL + screenshots.
 3. **Record 3-min demo video** (script in `~/.claude/plans/ok-so-basically-i-zesty-thunder.md`). Camera on.
-   - **Open with the AEO insight**: paste "Nature Made" / "magnesium supplement for seniors" → show GPT ranks me #4 but Llama/DeepSeek/Kimi don't mention me at all. That's the product.
-   - **Backup plan**: if APIs flake mid-recording, switch tab to `/demo` — same UI, instant render.
+   - **Strategy**: Submit form first (~30s wait), narrate intro/why during it, walk through scorecard + heatmap + leaderboard + Tavily in remaining time
+   - **Backup**: switch tab to `/demo` if APIs flake — same UI, instant
+   - **Punchline options**:
+     - "Bulletproof — every model knows me except Llama 4 Scout"
+     - "Linear — strong on GPT, invisible on Meta's stack"
+     - "Nature Made — open-weight models don't recommend mainstream drugstore brands"
 4. **Submit Pixii form** before 2026-05-05 23:59 IST.
 
 ### Nice-to-have (only if time permits)
-- [ ] Replace accordion with side-by-side LLM-vs-Tavily diff (better demo signal)
+- [ ] Replace accordion with side-by-side LLM-vs-Tavily diff
 - [ ] "Copy share link" button on report page
-- [ ] Vercel Analytics (`@vercel/analytics` — single import)
-- [ ] Top-level "AEO grade" (A/B/C/D/F) on scorecard for shareable bragging-rights
-- [ ] Streaming UI: stream cells as they finish so user sees progressive heatmap fill
+- [ ] Vercel Analytics
+- [ ] Top-level "AEO grade" (A/B/C/D/F) on scorecard
+- [ ] Streaming UI: stream cells as they finish so heatmap fills progressively
 
 ### Explicitly out of scope (don't add)
-- ❌ shadcn/ui (Tailwind utilities are fine for this scope)
+- ❌ shadcn/ui (Tailwind utilities are fine)
 - ❌ Recharts / Plotly (heatmap is a CSS grid by design)
-- ❌ Database (Neon/Supabase/Postgres) — Blob is the persistence layer
-- ❌ Auth (Clerk/NextAuth) — single-tenant demo
+- ❌ Database (Neon/Supabase/Postgres) — Blob is persistence
+- ❌ Auth (single-tenant demo)
 - ❌ AI Gateway — user wants own provider keys
 - ❌ Python helpers — full Next.js, no `uv`/`pip`
-- ❌ Edge runtime for `/api/analyze` — Node runtime needed for `@vercel/blob`, full SDK support, 300s timeout
-- ❌ Anthropic / Claude — cost concerns; user wants free-tier-friendly stack
-- ❌ Re-introducing Google AI Studio or OpenRouter for panel calls — they're rate-limit traps for repeated demos
+- ❌ Edge runtime for `/api/analyze` — Node runtime needed for Blob, full SDK, 300s timeout
+- ❌ Anthropic / Claude — cost concerns
+- ❌ Re-introducing Google AI Studio or OpenRouter for panel calls — rate-limit traps
+- ❌ Groq Compound — agent mode breaks rate limits and hits "Request Entity Too Large"
 
 ---
 
@@ -120,14 +133,18 @@ Old FastAPI + Vite MVP archived at `../legacy/` (one level up, outside this git 
 
 | When | Change | Why |
 |---|---|---|
-| 2026-05-03 (initial) | Built 3-model panel: GPT-5.5 + Gemini 2.5 Flash + Gemma 4 (Google AI Studio) | Original plan; user had Google + OpenAI keys |
-| 2026-05-03 +30min | Added Llama 3.3 70B + Qwen3 Next 80B via OpenRouter (5 models total) | User asked for richer panel via OpenRouter free models |
-| 2026-05-03 +60min | Pivoted Llama+Qwen+Gemini+Gemma → Groq (4 models on Groq, GPT-5.5 stays on OpenAI) | Live test surfaced: Gemini 20 RPD ceiling, OpenRouter free 429 cascades; demos couldn't repeat |
-| 2026-05-03 +60min | Reduced query count 8-10 → 5-6 | Fits rate limits with margin |
-| 2026-05-03 +60min | Added `/demo` static route + `public/demo.json` cache pattern | Video-recording safety net |
-| 2026-05-03 +90min | Live test #2 found 3 issues: stale Groq model IDs (`gemma2-9b-it` decommissioned, `llama-4-maverick-...` and `kimi-k2-instruct` rejected), `<think>` blocks confusing extractor on Qwen, heatmap mislabeling fallback-used cells as `err` | Fixed: Llama → `llama-3.3-70b-versatile`, Gemma → `deepseek-r1-distill-llama-70b` (renamed UI label to "DeepSeek R1 70B"), Kimi → `moonshotai/kimi-k2-instruct` (correct prefix); added `stripThinking()` to remove reasoning blocks before extraction; `callWithFallback` no longer sets `errorMessage` when fallback succeeds |
-| 2026-05-03 +100min | Live test #3 passed: 32.5s runtime, 0 errors, full 5×6 panel populated, real AEO signal visible | `public/demo.json` cached |
-| 2026-05-04 | More Groq decommissions: `deepseek-r1-distill-llama-70b` and `moonshotai/kimi-k2-instruct` both rejected on user's account. Re-pulled live model list — settled on `meta-llama/llama-4-scout-17b-16e-instruct`, `openai/gpt-oss-120b`, `groq/compound` for new panel slots. Labels updated to match. demo.json regenerated. Live test #4 ran 97s, 0 errors, 0 missed queries — bottleneck is gpt-5.5 panel calls at 31s/call avg | OpenAI premium column slowest by an order of magnitude vs Groq columns; livestream demo strategy = trigger run during 15s intro to overlap latency, or use `/demo` route as backup |
+| 2026-05-03 | Built 3-model panel: GPT-5.5 + Gemini 2.5 Flash + Gemma 4 (Google AI Studio) | Original plan; user had Google + OpenAI keys |
+| 2026-05-03 +30min | Added Llama 3.3 70B + Qwen3 Next 80B via OpenRouter (5 models total) | User asked for richer panel |
+| 2026-05-03 +60min | Pivoted Llama+Qwen+Gemini+Gemma → Groq | Live test surfaced: Gemini 20 RPD ceiling, OpenRouter free 429 cascades |
+| 2026-05-03 +60min | Reduced query count 8-10 → 5-6 | Fits rate limits |
+| 2026-05-03 +60min | Added `/demo` static route + `public/demo.json` cache pattern | Video recording safety net |
+| 2026-05-03 +90min | Live test #2 → fixed stale Groq IDs, added `<think>` stripping, fixed heatmap fallback labeling | `gemma2-9b-it` decommissioned, etc |
+| 2026-05-03 +100min | Live test #3 passed: 32.5s, 0 errors | demo.json cached for Nature Made |
+| 2026-05-04 | More Groq decommissions: DeepSeek + Kimi rejected. Pivot to `llama-4-scout`, `gpt-oss-120b`, `groq/compound` | Pulled live model list, picked what's actually live |
+| 2026-05-04 +30min | Live test #4 (Bulletproof) ran 90s but Compound 429'd repeatedly + "Request Entity Too Large" — its agent-mode multiplies internal calls | Compound unreliable for our use case |
+| 2026-05-04 +45min | Replaced Compound with `openai/gpt-oss-20b` | Predictable chat model, free, distinct size from gpt-oss-120b |
+| 2026-05-04 +60min | Leaderboard polish: token-2 fuzzy clustering (Sports Research × 3 → 1), connector-aware title-case ("Garden of Life" not "Garden OF Life") | Cosmetic but visible — cleaner demo |
+| 2026-05-05 | Prefix-merge pass added: single-token cluster (e.g. "Jira") merges into longer matching cluster (e.g. "Jira Software") | Caught last leaderboard duplicate. Doesn't over-merge "NOW Foods" + "NOW Sports" since both are 2-token |
 
 ---
 
@@ -135,7 +152,7 @@ Old FastAPI + Vite MVP archived at `../legacy/` (one level up, outside this git 
 
 | Blocker | What's needed | Who unblocks |
 |---|---|---|
-| Production share links | Vercel Blob store provisioned + `BLOB_READ_WRITE_TOKEN` set | User (in Vercel dashboard) |
+| Production share links | Vercel Blob store provisioned + `BLOB_READ_WRITE_TOKEN` set | User (Vercel dashboard) |
 | Public deployment | Vercel project linked + envs set + blob store created | User |
 | GitHub push | `git remote add origin` + `git push` | User |
 | Demo video | 3-min recording per script | User |
@@ -146,14 +163,14 @@ None of these are code changes. The codebase is feature-complete.
 
 ## Where things live (quick map)
 
-- **Plan / original spec**: `~/.claude/plans/ok-so-basically-i-zesty-thunder.md` (lives outside the repo; v2 has the Groq pivot)
+- **Plan / original spec**: `~/.claude/plans/ok-so-basically-i-zesty-thunder.md` (outside the repo; v2 has the Groq pivot)
 - **Project conventions for AI agents**: `CLAUDE.md`
 - **This file**: `progresstillnow.md`
 - **Active code**: `app/`, `lib/`, `components/`
 - **Old MVP for reference (outside this repo, do not edit)**: `../legacy/`
 - **Bundled AI SDK docs**: `node_modules/ai/docs/`
 - **Bundled Next.js docs**: `node_modules/next/dist/docs/`
-- **Demo cache target**: `public/demo.json` (created after first live run)
+- **Demo cache**: `public/demo.json`
 
 ---
 
@@ -173,3 +190,30 @@ If you (the user) are starting a fresh session:
 1. Open Claude inside this `web/` directory.
 2. Tell Claude what you want next ("smoke test", "save demo cache", "deploy", "polish UI", "record video", etc.).
 3. `CLAUDE.md` will auto-load context. This file gives the human-readable status.
+
+### Common commands cheat-sheet
+
+```bash
+# Run dev server
+bun run dev
+
+# Verify Groq model IDs (sanity-check before any models.ts edit)
+curl -s https://api.groq.com/openai/v1/models \
+  -H "Authorization: Bearer $(grep '^GROQ_API_KEY=' .env.local | cut -d= -f2)" \
+  | jq -r '.data[].id' | sort
+
+# Live smoke (server must be running on :3000)
+curl -s -X POST http://localhost:3000/api/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"brand":"Bulletproof","category":"MCT oil for keto coffee","competitors":["Sports Research","Nutiva","Onnit"]}' \
+  --max-time 240 -o /tmp/aeo.json -w "HTTP %{http_code} | %{time_total}s\n"
+
+# Save fresh demo.json from any successful run
+cp /tmp/aeo.json public/demo.json
+
+# Production build
+bun run build
+
+# Deploy
+vercel link && vercel deploy --prod
+```

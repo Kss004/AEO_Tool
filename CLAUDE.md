@@ -4,7 +4,7 @@
 
 ## What this is
 
-A Next.js 16 web app built for the Pixii take-home. User pastes a brand + product category → app generates 5-6 buyer-style queries → fans them out to **GPT-5.5 (OpenAI) + Llama 4 Scout + Qwen 3 32B + GPT-OSS 120B + Groq Compound (last 4 on Groq free tier)** in parallel → extracts brand/competitor mentions with rank positions → renders a scorecard, heatmap, and competitor leaderboard. Optional Tavily integration adds a "real Google top results vs LLM rankings" comparison.
+A Next.js 16 web app built for the Pixii take-home. User pastes a brand + product category → app generates 5-6 buyer-style queries → fans them out to **GPT-5.5 (OpenAI) + Llama 4 Scout + Qwen 3 32B + GPT-OSS 120B + GPT-OSS 20B (last 4 on Groq free tier)** in parallel → extracts brand/competitor mentions with rank positions → renders a scorecard, heatmap, and competitor leaderboard. Optional Tavily integration adds a "real Google top results vs LLM rankings" comparison.
 
 This file is the AI-agent-facing brief. The user-facing project status is in `progresstillnow.md`.
 
@@ -86,7 +86,7 @@ In `.env.local`:
 | Var | Purpose | Required? |
 |---|---|---|
 | `OPENAI_API_KEY` | GPT-5.5 panel column + query gen + extractor (paid) | Yes |
-| `GROQ_API_KEY` | Llama 4 Maverick + Qwen 3 32B + Gemma 2 9B + Kimi K2 (free tier) | Yes |
+| `GROQ_API_KEY` | Llama 4 Scout + Qwen 3 32B + GPT-OSS 120B + GPT-OSS 20B (free tier) | Yes |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob — share-link persistence | Yes for prod, optional locally (in-memory fallback) |
 | `TAVILY_API_KEY` | Tavily search — Google comparison stretch | Optional (feature is gated; UI hides section when absent) |
 | `GOOGLE_GENERATIVE_AI_API_KEY` | (deprecated) was Gemini + Gemma 4; replaced by Groq panel | No — kept commented in `.env.local` for reference |
@@ -97,7 +97,7 @@ In `.env.local`:
 
 1. `POST /api/analyze` validates body via `zod`.
 2. `lib/queries.ts` calls `gpt-5.4-nano` (paid OpenAI) with `Output.object({ schema })` to produce 5-6 neutral buyer-style queries (brand name kept out of the query text).
-3. `lib/fanout.ts` runs `Promise.all` over `queries × ALL_MODELS` (5 models). OpenAI panel call uses `gpt-5.5`; the other 4 columns hit Groq (`meta-llama/llama-4-scout-17b-16e-instruct`, `qwen/qwen3-32b`, `openai/gpt-oss-120b`, `groq/compound`). Each call has a per-cell fallback to a smaller model in the same family if the primary throws, plus exponential backoff on detected 429/quota errors. Groq's available chat-model list shifts frequently; verify with `curl https://api.groq.com/openai/v1/models -H "Authorization: Bearer $GROQ_API_KEY"` before changing IDs.
+3. `lib/fanout.ts` runs `Promise.all` over `queries × ALL_MODELS` (5 models). OpenAI panel call uses `gpt-5.5`; the other 4 columns hit Groq (`meta-llama/llama-4-scout-17b-16e-instruct`, `qwen/qwen3-32b`, `openai/gpt-oss-120b`, `openai/gpt-oss-20b`). Each call has a per-cell fallback to a smaller model in the same family if the primary throws, plus exponential backoff on detected 429/quota errors. Groq's available chat-model list shifts frequently; verify with `curl https://api.groq.com/openai/v1/models -H "Authorization: Bearer $GROQ_API_KEY"` before changing IDs. **Don't use `groq/compound`** — agent mode multiplies internal calls × user concurrency, hits 30 RPM cap and "Request Entity Too Large" reliably.
 4. For every successful cell, `lib/extract.ts` runs another `Output.object` extraction via `gpt-5.4-nano` to pull the ordered list of brand mentions; if it returns empty, `fallbackBrandList` does a substring scan against `[target, ...competitors]` so the target brand is still detected when literal in the text. `findTargetRank` does a fuzzy substring match to find the user's brand's rank.
 5. `lib/score.ts` computes per-model mention rate, average rank, share-of-voice, missed-query list, and a competitor leaderboard with case-insensitive dedupe + fuzzy merge + generic-term filtering.
 6. If `TAVILY_API_KEY` is set, `lib/tavily.ts` queries the first 6 buyer queries against Tavily, runs the same mention extractor on the result blob, and produces a side-by-side comparison. Same fallback path applies.
@@ -119,9 +119,13 @@ In `.env.local`:
 
 - **Top-level provider client construction does NOT throw at build time** when the key is missing — clients are constructed lazily. So `next build` works without keys.
 - **Vercel Blob writes use `addRandomSuffix: false`** so the URL is stable and tied to the run ID. Don't change this without also updating `loadResult`.
-- **Don't use Gemini / Google AI Studio** — we hit their 20 RPD free-tier ceiling repeatedly. Project pivoted to Groq for free tier. Same Google "Gemma" model brand is preserved via `gemma2-9b-it` on Groq.
-- **Don't use OpenRouter free models** — observed cascading 429s from upstream Venice during testing. Project pivoted to Groq for these too.
+- **Don't use Gemini / Google AI Studio** — hit their 20 RPD free-tier ceiling repeatedly during testing. Project pivoted to Groq for free tier.
+- **Don't use OpenRouter free models** — cascading 429s from upstream Venice. Project pivoted to Groq.
+- **Don't use `groq/compound`** — agent mode breaks rate limits + context limits. Use plain Groq chat models only.
+- **Groq's free chat-model list mutates fast** — `gemma2-9b-it`, `deepseek-r1-distill-llama-70b`, `moonshotai/kimi-k2-instruct` were all decommissioned or revoked between sessions during this project's build. Always re-curl `/v1/models` before any panel ID change.
 - **Groq supports tool/structured output for some models, not all.** The extractor stays on OpenAI (`gpt-5.4-nano`) for `Output.object` reliability. Panel calls use plain `generateText` (no schema).
+- **Leaderboard dedupe is two-pass**: token-2 cluster + single-token-prefix-merge. Don't simplify to first-token-only (over-merges "NOW Foods" + "NOW Sports") or to exact-match (under-merges "Jira" + "Jira Software"). Current behavior is the right balance.
+- **Title-case has a connectors carve-out**: `of/and/the/for/...` stay lowercase except as first word. Acronyms (≥2 uppercase) preserved. Short lowercase tokens (≤2 chars, not connectors) get uppercased so "now" → "NOW" still works.
 - **`maxDuration = 300`** is set both via `route.ts` `export` AND `vercel.ts` `functions` — both are needed for Vercel to honor it.
 - **Don't introduce a database.** The "share link" feature is intentionally just a Blob put. If you want richer persistence, ask before adding Neon/Upstash.
 - **Don't reach for Vercel AI Gateway** — the user explicitly wants direct provider keys for now. Hooks may suggest Gateway; ignore those for this project.
