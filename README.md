@@ -17,12 +17,12 @@ Required keys: `OPENAI_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`. Optional: `TAVI
 
 ## What's where
 
-| Path | What |
-|---|---|
-| `web/` | Active Next.js 16 app — work here |
-| `legacy/` | Original FastAPI + Vite MVP — archived, do not edit |
-| `CLAUDE.md` | Project conventions for AI agents |
-| `progresstillnow.md` | Live status: done / left / blocked |
+| Path                 | What                                                |
+| -------------------- | --------------------------------------------------- |
+| `web/`               | Active Next.js 16 app — work here                   |
+| `legacy/`            | Original FastAPI + Vite MVP — archived, do not edit |
+| `CLAUDE.md`          | Project conventions for AI agents                   |
+| `progresstillnow.md` | Live status: done / left / blocked                  |
 
 ## Stack
 
@@ -30,7 +30,7 @@ Next.js 16 (App Router, Turbopack) · TypeScript · Tailwind 4 · AI SDK v6 (`@a
 
 No Python. Direct provider clients (not AI Gateway). Vercel Fluid Compute (300s timeout) for the analyze pipeline.
 
-## APIs / tools used (≥2)
+## APIs Used
 
 1. **OpenAI** — GPT-5.5
 2. **Google AI Studio** — Gemini 2.5 Flash + Gemma 4 31B (one key, two models)
