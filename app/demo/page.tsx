@@ -66,9 +66,7 @@ export default async function DemoPage() {
       </div>
 
       <div className="rounded-2xl border border-emerald-900/40 bg-emerald-950/20 p-4 text-sm text-emerald-200">
-        Pre-recorded sample diagnostic. No API calls happen on this page — it
-        renders a saved run instantly. Use this if you want to see the output
-        without waiting for live LLM responses.
+        Pre-recorded sample diagnostic. Sample output for reference
       </div>
 
       <Scorecard result={result} />

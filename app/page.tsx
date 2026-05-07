@@ -14,8 +14,7 @@ export default function Home() {
         </h1>
         <p className="max-w-2xl text-zinc-400">
           Enter a brand and product category. We generate the queries a real
-          shopper would type, fan them out across GPT-5.5, Gemini 2.5 Flash, and
-          Gemma 4, and produce a report card showing where you win, tie, or get
+          shopper would type, fan them out across Flagship LLMs, and produce a report card showing where you win, tie, or get
           ignored.
         </p>
       </header>
