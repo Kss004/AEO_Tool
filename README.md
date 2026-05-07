@@ -1,6 +1,6 @@
 # AEO Diagnostic
 
-See how your brand ranks across five different LLMs when shoppers ask AI for product recommendations. Built for the Pixii take-home.
+See how your brand ranks across five different LLMs when shoppers ask AI for product recommendations.
 
 Paste a brand and a product category. The app generates 5–6 buyer-style queries, fans them out to five models in parallel, extracts brand mentions and rank positions from each response, and renders a scorecard, heatmap, and competitor leaderboard. Optional Tavily integration adds a side-by-side view of how the LLM rankings compare to real Google top results.
 
@@ -18,13 +18,13 @@ Paste a brand and a product category. The app generates 5–6 buyer-style querie
 
 The five panel columns:
 
-| Column | Provider | Model |
-|---|---|---|
-| OpenAI | OpenAI | `gpt-5.5` |
-| Llama 4 Scout | Groq | `meta-llama/llama-4-scout-17b-16e-instruct` |
-| Qwen 3 32B | Groq | `qwen/qwen3-32b` |
-| GPT-OSS 120B | Groq | `openai/gpt-oss-120b` |
-| GPT-OSS 20B | Groq | `openai/gpt-oss-20b` |
+| Column        | Provider | Model                                       |
+| ------------- | -------- | ------------------------------------------- |
+| OpenAI        | OpenAI   | `gpt-5.5`                                   |
+| Llama 4 Scout | Groq     | `meta-llama/llama-4-scout-17b-16e-instruct` |
+| Qwen 3 32B    | Groq     | `qwen/qwen3-32b`                            |
+| GPT-OSS 120B  | Groq     | `openai/gpt-oss-120b`                       |
+| GPT-OSS 20B   | Groq     | `openai/gpt-oss-20b`                        |
 
 Query generation and mention extraction both use OpenAI `gpt-5.4-nano` (small, structured-output reliable, cheap).
 
@@ -52,18 +52,18 @@ bun run dev                     # http://localhost:3000
 
 Required env vars:
 
-| Var | Purpose |
-|---|---|
-| `OPENAI_API_KEY` | panel column + query gen + extractor |
-| `GROQ_API_KEY` | four panel columns (free tier — no card needed) |
+| Var                     | Purpose                                          |
+| ----------------------- | ------------------------------------------------ |
+| `OPENAI_API_KEY`        | panel column + query gen + extractor             |
+| `GROQ_API_KEY`          | four panel columns (free tier — no card needed)  |
 | `BLOB_READ_WRITE_TOKEN` | share-link persistence (auto-injected on Vercel) |
 
 Optional:
 
-| Var | Purpose |
-|---|---|
-| `TAVILY_API_KEY` | enables the Google comparison section |
-| `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` | rate limiter; no-ops when both unset |
+| Var                                                   | Purpose                               |
+| ----------------------------------------------------- | ------------------------------------- |
+| `TAVILY_API_KEY`                                      | enables the Google comparison section |
+| `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` | rate limiter; no-ops when both unset  |
 
 ## Tests
 
