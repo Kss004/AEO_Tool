@@ -17,8 +17,8 @@ export function Leaderboard({ result }: { result: AnalyzeResult }) {
           No competitor mentions extracted.
         </p>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/30">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-2xl border border-zinc-800 bg-zinc-900/30">
+          <table className="w-full min-w-[32rem] text-sm">
             <thead className="border-b border-zinc-800 text-left text-xs uppercase tracking-wider text-zinc-500">
               <tr>
                 <th className="p-3 font-medium">#</th>

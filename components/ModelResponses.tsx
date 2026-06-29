@@ -30,14 +30,14 @@ export function ModelResponses({ result }: { result: AnalyzeResult }) {
                 onClick={() => setOpenQuery(isOpen ? null : q)}
                 className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm text-zinc-200 hover:bg-zinc-900/60"
               >
-                <span className="truncate">{q}</span>
+                <span className="min-w-0 flex-1 truncate">{q}</span>
                 <span className="font-mono text-xs text-zinc-500">
                   {isOpen ? "−" : "+"}
                 </span>
               </button>
               {isOpen && (
                 <div className="border-t border-zinc-800 p-4">
-                  <div className="mb-3 flex gap-2">
+                  <div className="mb-3 flex flex-wrap gap-2">
                     {ALL_MODELS.map((m) => (
                       <button
                         key={m}

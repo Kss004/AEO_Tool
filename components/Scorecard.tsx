@@ -16,12 +16,12 @@ export function Scorecard({ result }: { result: AnalyzeResult }) {
 
   return (
     <section className="space-y-4">
-      <div className="flex items-end justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.3em] text-emerald-400/80">
             Report card
           </p>
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
             {request.brand} <span className="text-zinc-500">·</span>{" "}
             <span className="text-zinc-400">{request.category}</span>
           </h2>
@@ -42,7 +42,7 @@ export function Scorecard({ result }: { result: AnalyzeResult }) {
               <p className="text-xs uppercase tracking-wider text-zinc-500">
                 {MODEL_LABELS[m]}
               </p>
-              <div className="mt-2 flex items-baseline gap-2">
+              <div className="mt-2 flex flex-wrap items-baseline gap-2">
                 <span className="text-3xl font-semibold">
                   {pct(s.mentionRate)}
                 </span>

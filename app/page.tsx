@@ -2,14 +2,14 @@ import { InputForm } from "@/components/InputForm";
 
 export default function Home() {
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-12 px-6 py-16">
+    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-8 px-4 py-10 sm:gap-12 sm:px-6 sm:py-16">
       <header className="space-y-4">
         <p className="font-mono text-xs uppercase tracking-[0.3em] text-emerald-400/80">
           AEO Diagnostic
         </p>
-        <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
+        <h1 className="text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">
           How does your brand rank when shoppers
-          <br />
+          <br className="hidden sm:block" />
           ask AI?
         </h1>
         <p className="max-w-2xl text-zinc-400">
@@ -21,7 +21,7 @@ export default function Home() {
 
       <InputForm />
 
-      <div className="flex items-center justify-between rounded-2xl border border-zinc-900 bg-zinc-950/40 px-5 py-4 text-sm text-zinc-400">
+      <div className="flex flex-col gap-3 rounded-2xl border border-zinc-900 bg-zinc-950/40 px-5 py-4 text-sm text-zinc-400 sm:flex-row sm:items-center sm:justify-between">
         <span>
           Don&apos;t want to wait for a live run?{" "}
           <span className="text-zinc-500">
@@ -30,7 +30,7 @@ export default function Home() {
         </span>
         <a
           href="/demo"
-          className="rounded-lg border border-emerald-700/40 bg-emerald-900/20 px-3 py-1.5 text-emerald-300 transition hover:bg-emerald-900/40"
+          className="rounded-lg border border-emerald-700/40 bg-emerald-900/20 px-3 py-1.5 text-center text-emerald-300 transition hover:bg-emerald-900/40 sm:shrink-0"
         >
           Try sample →
         </a>

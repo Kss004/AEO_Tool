@@ -14,7 +14,7 @@ export function Heatmap({ result }: { result: AnalyzeResult }) {
       </p>
 
       <div className="overflow-x-auto rounded-2xl border border-zinc-800 bg-zinc-900/30">
-        <table className="w-full border-collapse text-sm">
+        <table className="w-full min-w-[42rem] border-collapse text-sm">
           <thead>
             <tr className="border-b border-zinc-800 text-left">
               <th className="p-3 font-medium text-zinc-400">Query</th>

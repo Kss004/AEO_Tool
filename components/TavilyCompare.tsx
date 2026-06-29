@@ -11,8 +11,8 @@ export function TavilyCompare({ result }: { result: AnalyzeResult }) {
         here = brands that win in Google SEO but lose in AEO (or vice versa).
       </p>
 
-      <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/30">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-2xl border border-zinc-800 bg-zinc-900/30">
+        <table className="w-full min-w-[42rem] text-sm">
           <thead className="border-b border-zinc-800 text-left text-xs uppercase tracking-wider text-zinc-500">
             <tr>
               <th className="p-3 font-medium">Query</th>

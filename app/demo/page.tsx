@@ -25,7 +25,7 @@ export default async function DemoPage() {
 
   if (!result) {
     return (
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-16">
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-10 sm:px-6 sm:py-16">
         <Link
           href="/"
           className="font-mono text-xs uppercase tracking-[0.3em] text-emerald-400/80 hover:text-emerald-300"
@@ -43,7 +43,7 @@ export default async function DemoPage() {
         </p>
         <p className="text-sm text-zinc-500">
           Hint:{" "}
-          <code className="rounded bg-zinc-900 px-1.5 py-0.5">
+          <code className="break-all rounded bg-zinc-900 px-1.5 py-0.5">
             curl http://localhost:3000/api/report/&lt;id&gt; &gt; public/demo.json
           </code>
         </p>
@@ -52,8 +52,8 @@ export default async function DemoPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-10 px-6 py-12">
-      <div className="flex items-center justify-between">
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-4 py-8 sm:gap-10 sm:px-6 sm:py-12">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <Link
           href="/"
           className="font-mono text-xs uppercase tracking-[0.3em] text-emerald-400/80 hover:text-emerald-300"
@@ -79,7 +79,7 @@ export default async function DemoPage() {
           <h3 className="text-lg font-semibold">Queries you got ignored on</h3>
           <ul className="space-y-1.5 rounded-2xl border border-zinc-800 bg-zinc-900/30 p-5 text-sm text-zinc-400">
             {result.score.missedQueries.map((q) => (
-              <li key={q} className="flex gap-2">
+              <li key={q} className="flex items-start gap-2">
                 <span className="text-red-400">✗</span>
                 {q}
               </li>
