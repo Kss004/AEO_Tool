@@ -6,7 +6,7 @@ import type { AnalyzeResult } from "@/lib/types";
 
 const STAGES = [
   "Generating buyer-style queries...",
-  "Asking GPT-5.5, Gemini 2.5 Flash, and Gemma 4 in parallel...",
+  "Asking five panel models in parallel...",
   "Extracting brand mentions and rank positions...",
   "Comparing to real Google results (Tavily)...",
   "Compiling your report card...",
@@ -89,7 +89,7 @@ export function InputForm() {
 
       <div className="flex flex-col gap-4 pt-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-zinc-500">
-          Runs ~8-10 queries × 3 models. Takes 30-90s.
+          Runs 5-6 queries × 5 models. Takes 30-90s.
         </p>
         <button
           type="submit"

@@ -2,8 +2,8 @@ export type ModelKey = "openai" | "llama" | "qwen" | "gemma" | "kimi";
 
 export const MODEL_LABELS: Record<ModelKey, string> = {
   openai: "GPT-5.5",
-  llama: "Llama 4 Scout",
-  qwen: "Qwen 3 32B",
+  llama: "Qwen 3.6 27B",
+  qwen: "Qwen 3.8 27B",
   gemma: "GPT-OSS 120B",
   kimi: "GPT-OSS 20B",
 };

@@ -13,17 +13,18 @@ const groq = createGroq({
 const OPENAI_PRIMARY = "gpt-5.5";
 const OPENAI_FALLBACK = "gpt-5.4-nano";
 
-const LLAMA_PRIMARY = "meta-llama/llama-4-scout-17b-16e-instruct";
-const LLAMA_FALLBACK = "llama-3.3-70b-versatile";
+// Keep logical keys stable because they are persisted in report JSON.
+const LLAMA_PRIMARY = "qwen/qwen3.6-27b";
+const LLAMA_FALLBACK = "qwen/qwen3.8-27b";
 
-const QWEN_PRIMARY = "qwen/qwen3-32b";
-const QWEN_FALLBACK = "llama-3.3-70b-versatile";
+const QWEN_PRIMARY = "qwen/qwen3.8-27b";
+const QWEN_FALLBACK = "qwen/qwen3.6-27b";
 
 const GEMMA_PRIMARY = "openai/gpt-oss-120b";
 const GEMMA_FALLBACK = "openai/gpt-oss-20b";
 
 const KIMI_PRIMARY = "openai/gpt-oss-20b";
-const KIMI_FALLBACK = "llama-3.1-8b-instant";
+const KIMI_FALLBACK = "openai/gpt-oss-120b";
 
 export function modelFor(key: ModelKey, useFallback = false) {
   switch (key) {

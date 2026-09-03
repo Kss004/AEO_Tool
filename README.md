@@ -1,6 +1,6 @@
 # AEO Diagnostic
 
-See how your brand ranks across five different LLMs when shoppers ask AI for product recommendations.
+See how your brand ranks across five current LLMs when shoppers ask AI for product recommendations.
 
 Paste a brand and a product category. The app generates 5–6 buyer-style queries, fans them out to five models in parallel, extracts brand mentions and rank positions from each response, and renders a scorecard, heatmap, and competitor leaderboard. Optional Tavily integration adds a side-by-side view of how the LLM rankings compare to real Google top results.
 
@@ -8,7 +8,7 @@ Paste a brand and a product category. The app generates 5–6 buyer-style querie
 
 1. `POST /api/analyze` validates the input (zod).
 2. `lib/queries.ts` asks `gpt-5.4-nano` to write 5–6 neutral buyer queries (the brand name itself is never inserted into the query text).
-3. `lib/fanout.ts` runs every `query × model` cell in parallel. Each cell falls back to a smaller model in the same family on error and backs off on 429s. There is a 60s per-cell timeout.
+3. `lib/fanout.ts` runs every `query × model` cell in parallel. Each cell falls back to another configured model on error and backs off on 429s. There is a 60s per-cell timeout.
 4. For each response, `lib/extract.ts` calls `gpt-5.4-nano` with a structured-output schema to pull the ordered list of brand mentions. If extraction returns empty, a substring scan against the known brand list is used as a fallback.
 5. `lib/score.ts` computes per-model mention rate, average rank, share-of-voice, missed queries, and a deduped competitor leaderboard.
 6. The full result is saved to Vercel Blob under a short ID and returned. The client navigates to `/report/[id]`, which server-renders the report.
@@ -21,17 +21,19 @@ The five panel columns:
 | Column        | Provider | Model                                       |
 | ------------- | -------- | ------------------------------------------- |
 | OpenAI        | OpenAI   | `gpt-5.5`                                   |
-| Llama 4 Scout | Groq     | `meta-llama/llama-4-scout-17b-16e-instruct` |
-| Qwen 3 32B    | Groq     | `qwen/qwen3-32b`                            |
+| Qwen 3.6 27B  | Groq     | `qwen/qwen3.6-27b`                           |
+| Qwen 3.8 27B  | Groq     | `qwen/qwen3.8-27b`                           |
 | GPT-OSS 120B  | Groq     | `openai/gpt-oss-120b`                       |
 | GPT-OSS 20B   | Groq     | `openai/gpt-oss-20b`                        |
+
+The Qwen 3.6 and 3.8 entries are Groq preview models; check current pricing and access in the Groq console.
 
 Query generation and mention extraction both use OpenAI `gpt-5.4-nano` (small, structured-output reliable, cheap).
 
 ## APIs / tools used
 
 1. **OpenAI** — panel column + query generation + mention extraction
-2. **Groq** — four panel columns on the free tier
+2. **Groq** — four panel columns
 3. **Vercel Blob** — share-link persistence for `/report/[id]`
 4. **Upstash Redis** — per-IP rate limit on `/api/analyze` (5 req/hour)
 5. **Tavily** — Google reality-check (optional)
@@ -55,7 +57,7 @@ Required env vars:
 | Var                     | Purpose                                          |
 | ----------------------- | ------------------------------------------------ |
 | `OPENAI_API_KEY`        | panel column + query gen + extractor             |
-| `GROQ_API_KEY`          | four panel columns (free tier — no card needed)  |
+| `GROQ_API_KEY`          | four Groq panel columns                        |
 | `BLOB_READ_WRITE_TOKEN` | share-link persistence (auto-injected on Vercel) |
 
 Optional:
@@ -68,7 +70,7 @@ Optional:
 ## Tests
 
 ```bash
-bun run test          # 58 unit tests (score, extract, queries)
+bun run test          # 61 unit tests (score, extract, queries, models)
 bun run test:watch    # rerun on save
 bun run typecheck     # tsc --noEmit
 bun run lint          # eslint
@@ -87,7 +89,7 @@ CI runs `bun run check` on every push and PR via `.github/workflows/ci.yml`.
 ## Deploy (Vercel + GitHub)
 
 1. Push this repo to a public GitHub repo.
-2. Vercel dashboard → **Add New → Project** → import the repo. Set **Root Directory** to `web` (the code lives there, not at the repo root).
+2. Vercel dashboard → **Add New → Project** → import the repo. Use the repository root as **Root Directory** (this directory is the repo root).
 3. Vercel **Storage** → create a **Blob** store, then **Connect to Project**. Region: same as your Function (default `iad1`).
 4. Vercel **Storage → Marketplace** → add **Upstash for Redis** (free tier) and connect to the project.
 5. Vercel project **Settings → Environment Variables** → add `OPENAI_API_KEY`, `GROQ_API_KEY`, and optionally `TAVILY_API_KEY` for Production + Preview.

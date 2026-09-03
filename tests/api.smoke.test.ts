@@ -84,6 +84,10 @@ describe.skipIf(!RUN)("smoke /api/analyze", () => {
     const models = new Set(result.cells.map((c) => c.model));
     expect(models.size).toBe(5);
     expect(result.cells.length).toBe(result.queries.length * 5);
+    for (const cell of result.cells) {
+      expect(cell.errorMessage).toBeNull();
+      expect(cell.responseText.trim().length).toBeGreaterThan(0);
+    }
 
     const reportRes = await fetch(`${BASE}/api/report/${result.id}`);
     expect(reportRes.status).toBe(200);

@@ -2,11 +2,11 @@
 
 > Read this first when resuming. Single source of truth for "what's done, what's left, what to do next".
 
-Last updated: 2026-05-05 (Compound pivot; leaderboard dedupe + title-case shipped; multiple live runs verified across brands)
+Last updated: 2026-09-03 (migrated deprecated Groq panel IDs; all five current model groups verified live)
 
 ## TL;DR — current state
 
-Pure Next.js 16 app — this `web/` directory is the git root. Compiles cleanly (`bun run build` ✅). Multiple live diagnostic tests passed across different brands (Nature Made, Bulletproof, Linear). All 5 columns populated, runtime 30-90s depending on model mix. `public/demo.json` cached (Bulletproof / MCT oil run, id `morgblb39m627f`). `/demo` route renders the saved scorecard in ~1s.
+Pure Next.js 16 app — this `web/` directory is the git root. Compiles cleanly (`bun run build` ✅). Multiple live diagnostic tests passed across different brands (Nature Made, Bulletproof, Linear). All 5 columns populated, runtime 30-90s depending on model mix. `public/demo.json` cached (Bulletproof / MCT oil run, id `mtluhbof7qvfb`). `/demo` route renders the saved scorecard in ~1s.
 
 **Demo signal is real and crisp** for the video — different brands surface different gaps:
 - **Nature Made / magnesium** — GPT-5.5 + GPT-OSS variants 80%+, non-OpenAI families 0-50%
@@ -15,7 +15,7 @@ Pure Next.js 16 app — this `web/` directory is the git root. Compiles cleanly 
 
 The recurring story: **Meta's Llama 4 Scout consistently undermentions brands** that GPT and Qwen surface clearly. That gap IS the AEO product point.
 
-Pivoted off Google AI Studio + OpenRouter for panel calls (Gemini 20 RPD ceiling + OpenRouter free 429 cascades). Current panel = **GPT-5.5** (paid OpenAI) + **Llama 4 Scout** + **Qwen 3 32B** + **GPT-OSS 120B** + **GPT-OSS 20B** (last 4 all on Groq free tier). Single `GROQ_API_KEY` covers them all. Groq's free-tier model list mutates fast — re-verify IDs with `curl https://api.groq.com/openai/v1/models -H "Authorization: Bearer $GROQ_API_KEY"` before any change.
+Pivoted off Google AI Studio + OpenRouter for panel calls (Gemini 20 RPD ceiling + OpenRouter free 429 cascades). Current panel = **GPT-5.5** (paid OpenAI) + **Qwen 3.6 27B** + **Qwen 3.8 27B** + **GPT-OSS 120B** + **GPT-OSS 20B** on Groq. Single `GROQ_API_KEY` covers them all. Groq's model list mutates fast — re-verify IDs with `curl https://api.groq.com/openai/v1/models -H "Authorization: Bearer $GROQ_API_KEY"` before any change.
 
 Next step: deploy to Vercel + record video.
 
@@ -29,7 +29,7 @@ Old FastAPI + Vite MVP archived at `../legacy/` (sibling, outside this git repo)
 |---|---|---|
 | Stack | Next.js 16 + AI SDK v6 | Plan parity, single Vercel deploy |
 | Package manager | **bun** for JS, no Python | User explicit. Python dropped |
-| Panel models | GPT-5.5 (paid OpenAI) + Llama 4 Scout + Qwen 3 32B + GPT-OSS 120B + GPT-OSS 20B (last 4 Groq free) | Most reliable lineup after multiple decommission rounds. Compound dropped (agent mode breaks rate limits + context limits) |
+| Panel models | GPT-5.5 (paid OpenAI) + Qwen 3.6 27B + Qwen 3.8 27B + GPT-OSS 120B + GPT-OSS 20B | Current Groq replacements after Llama 4 Scout and Qwen 3 32B deprecations. Compound dropped (agent mode breaks rate limits + context limits) |
 | Queries per run | **5-6** (down from 8-10) | Fits rate limits with margin |
 | Utility / extractor | `gpt-5.4-nano` (paid OpenAI) for both | Generous quota, structured-output reliable, cheap (~$0.05/run) |
 | LLM wiring | Direct provider clients (`@ai-sdk/openai`, `@ai-sdk/groq`) — NOT AI Gateway | User wants own keys. Hooks may push Gateway; ignore them |
@@ -53,8 +53,8 @@ Old FastAPI + Vite MVP archived at `../legacy/` (sibling, outside this git repo)
 - [x] git repo lives at `web/` root (initialized by `create-next-app`); `../legacy/` is intentionally outside the repo
 
 ### Core libs (`lib/`)
-- [x] `types.ts` — `ModelKey: openai | llama | qwen | gemma | kimi`; `MODEL_LABELS` (note: keys retained for compat, labels rendered as "GPT-5.5 / Llama 4 Scout / Qwen 3 32B / GPT-OSS 120B / GPT-OSS 20B")
-- [x] `models.ts` — Groq + OpenAI clients; primary IDs `gpt-5.5`, `meta-llama/llama-4-scout-17b-16e-instruct`, `qwen/qwen3-32b`, `openai/gpt-oss-120b`, `openai/gpt-oss-20b`. Per-model fallbacks to smaller siblings. `utilityModel()` and `extractorModel()` both `gpt-5.4-nano`
+- [x] `types.ts` — `ModelKey: openai | llama | qwen | gemma | kimi`; `MODEL_LABELS` (legacy keys retained for compatibility, labels rendered as "GPT-5.5 / Qwen 3.6 27B / Qwen 3.8 27B / GPT-OSS 120B / GPT-OSS 20B")
+- [x] `models.ts` — Groq + OpenAI clients; primary IDs `gpt-5.5`, `qwen/qwen3.6-27b`, `qwen/qwen3.8-27b`, `openai/gpt-oss-120b`, `openai/gpt-oss-20b`. Per-model fallbacks use currently configured models. `utilityModel()` and `extractorModel()` both `gpt-5.4-nano`
 - [x] `queries.ts` — schema bound to 5-6 queries
 - [x] `extract.ts` — Output.object extractor on OpenAI nano; `stripThinking()` removes `<think>...</think>` for reasoning models; substring/regex fallback when structured extraction returns empty; brand-mention scanner against known competitors
 - [x] `fanout.ts` — `runCell` with primary→fallback retry + 429 exponential backoff; concurrency=6 per model (Groq has the headroom). When fallback succeeds, `errorMessage = null` so heatmap doesn't mislabel
@@ -103,7 +103,7 @@ Old FastAPI + Vite MVP archived at `../legacy/` (sibling, outside this git repo)
    - **Strategy**: Submit form first (~30s wait), narrate intro/why during it, walk through scorecard + heatmap + leaderboard + Tavily in remaining time
    - **Backup**: switch tab to `/demo` if APIs flake — same UI, instant
    - **Punchline options**:
-     - "Bulletproof — every model knows me except Llama 4 Scout"
+     - "Bulletproof — all five current models returned results with different recommendation patterns"
      - "Linear — strong on GPT, invisible on Meta's stack"
      - "Nature Made — open-weight models don't recommend mainstream drugstore brands"
 4. **Submit Pixii form** before 2026-05-05 23:59 IST.
